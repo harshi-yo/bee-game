@@ -1,2 +1,2 @@
 # bee-game
-Bee game created with python , html,css,dyango
+Bee game created with HTML , CSS , PYTHON , DJANGO , JAVA 
