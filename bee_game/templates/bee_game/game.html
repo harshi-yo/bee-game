@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bee Game</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: skyblue;
+        }
+
+        #bee {
+            width: 60px;
+            height: 60px;
+            background: yellow;
+            border-radius: 50%;
+            position: absolute;
+            top: 200px;
+            left: 100px;
+        }
+
+        #obstacle {
+            width: 80px;
+            height: 60px;
+            background: green;
+            position: absolute;
+            bottom: 0;
+            right: -100px;
+            animation: move 2.5s linear infinite;
+        }
+
+        @keyframes move {
+            0% { right: -150px; }
+            100% { right: 100%; }
+        }
+
+        .jump {
+            animation: jump 0.5s linear;
+        }
+
+        @keyframes jump {
+            0% { top: 200px; }
+            50% { top: 120px; }
+            100% { top: 200px; }
+        }
+
+        #score {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 30px;
+            color: black;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="score">Score: 0</div>
+    <div id="bee"></div>
+    <div id="obstacle"></div>
+
+<script>
+    let bee = document.getElementById("bee");
+    let obstacle = document.getElementById("obstacle");
+    let scoreDisplay = document.getElementById("score");
+    let score = 0;
+    let isAlive = true;
+
+    // Jump function
+    document.addEventListener("keydown", function() {
+        if (!bee.classList.contains("jump")) {
+            bee.classList.add("jump");
+
+            setTimeout(() => {
+                bee.classList.remove("jump");
+            }, 500);
+        }
+    });
+
+    // Game loop (collision + score)
+    setInterval(function () {
+        if (!isAlive) return;
+
+        let beeTop = parseInt(window.getComputedStyle(bee).getPropertyValue("top"));
+        let obstacleLeft = parseInt(window.getComputedStyle(obstacle).getPropertyValue("right"));
+
+        // Collision detection
+        if (700 - obstacleLeft <= 120 && 700 - obstacleLeft >= 60 && beeTop > 160) {
+            isAlive = false;
+            alert("Game Over! Your Score: " + score);
+            window.location.reload();
+        }
+
+        // Increase score
+        if (obstacleLeft >= 298 && obstacleLeft <= 300) {
+            score++;
+            scoreDisplay.innerHTML = "Score: " + score;
+        }
+    }, 50);
+</script>
+
+</body>
+</html>
