@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ultimate Bee Jump Game</title>
+
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial;
+            background: #cfefff;
+            overflow: hidden;
+        }
+
+        /* Moving background */
+        #game {
+            width: 700px;
+            height: 250px;
+            border: 3px solid #333;
+            margin: 40px auto;
+            background: url('https://i.imgur.com/XnUFTtV.png'); /* sky & grass */
+            background-size: cover;
+            animation: bgmove 5s linear infinite;
+            position: relative;
+            overflow: hidden;
+            border-radius: 12px;
+        }
+
+        @keyframes bgmove {
+            from { background-position: 0; }
+            to { background-position: -500px; }
+        }
+
+        /* 🐝 Bee */
+        #bee {
+            width: 55px;
+            height: 55px;
+            background-image: url('https://i.imgur.com/xCpT7Wq.gif');
+            background-size: contain;
+            background-repeat: no-repeat;
+            position: absolute;
+            bottom: 0px;
+            left: 60px;
+            animation: float 1s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .jump {
+            animation: jump 0.5s ease-out;
+        }
+
+        @keyframes jump {
+            0% { bottom: 0; }
+            50% { bottom: 140px; }
+            100% { bottom: 0; }
+        }
+
+        /* Obstacles */
+        .obstacle {
+            width: 50px;
+            height: 60px;
+            position: absolute;
+            bottom: 0;
+            right: -80px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            animation: move 2s linear infinite;
+        }
+
+        @keyframes move {
+            0% { right: -80px; }
+            100% { right: 780px; }
+        }
+
+        #score {
+            font-size: 22px;
+            margin-top: 10px;
+        }
+
+        #highscore {
+            font-size: 20px;
+            color: darkgreen;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🐝 Ultimate Bee Jump Game</h1>
+    <p>Press **SPACE** to jump!</p>
+
+    <div id="game">
+        <div id="bee"></div>
+        <div id="obstacle" class="obstacle"></div>
+    </div>
+
+    <div id="score">Score: 0</div>
+    <div id="highscore">High Score: {{ highscore }}</div>
+
+    <!-- AUDIO -->
+    <audio id="jumpSound" src="https://assets.mixkit.co/active_storage/sfx/949/949-preview.mp3"></audio>
+    <audio id="gameOverSound" src="https://assets.mixkit.co/active_storage/sfx/955/955-preview.mp3"></audio>
+
+
+    <script>
+        let bee = document.getElementById("bee");
+        let obs = document.getElementById("obstacle");
+        let scoreDisplay = document.getElementById("score");
+        let jumpSound = document.getElementById("jumpSound");
+        let gameOverSound = document.getElementById("gameOverSound");
+
+        let score = 0;
+        let gameOver = false;
+
+        // Obstacle images
+        const obstacles = [
+            "https://i.imgur.com/3PnuFTc.png", // flower
+            "https://i.imgur.com/z6tK1kF.png", // leaf
+            "https://i.imgur.com/8l2f1v8.png"  // rock
+        ];
+
+        function randomObstacle() {
+            let img = obstacles[Math.floor(Math.random() * obstacles.length)];
+            obs.style.backgroundImage = `url(${img})`;
+        }
+
+        randomObstacle();
+
+        // Jump
+        document.addEventListener("keydown", function(e) {
+            if (e.code === "Space" && !bee.classList.contains("jump")) {
+                bee.classList.add("jump");
+                jumpSound.play();
+                setTimeout(() => bee.classList.remove("jump"), 500);
+            }
+        });
+
+        // Game loop
+        setInterval(() => {
+            if (gameOver) return;
+
+            let beeBottom = parseInt(window.getComputedStyle(bee).getPropertyValue("bottom"));
+            let obsRight = parseInt(window.getComputedStyle(obs).getPropertyValue("right"));
+
+            if (obsRight > 620 && obsRight < 690 && beeBottom < 60) {
+                gameOver = true;
+                obs.style.animation = "none";
+                gameOverSound.play();
+
+                alert("🐝 Game Over! Score: " + score);
+
+                // Save score to Django
+                fetch("/save-score/", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: "score=" + score
+                });
+
+                return;
+            }
+
+            score++;
+            scoreDisplay.innerHTML = "Score: " + score;
+
+        }, 1000 / 30);
+
+        // Change obstacle every 2 seconds
+        setInterval(randomObstacle, 2000);
+    </script>
+
+</body>
+</html>
