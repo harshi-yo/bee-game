@@ -1,103 +1,201 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Bee Game</title>
+    <meta charset="UTF-8">
+    <title>Bee Jump Game</title>
     <style>
         body {
             margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(#87CEEB, #4da6ff);
+            font-family: Arial, sans-serif;
+        }
+
+        .game-box {
+            width: 700px;
+            height: 300px;
+            background: #fff;
+            border: 2px solid #333;
             overflow: hidden;
-            background: skyblue;
+            position: relative;
+            border-radius: 10px;
         }
 
         #bee {
             width: 60px;
             height: 60px;
-            background: yellow;
-            border-radius: 50%;
             position: absolute;
-            top: 200px;
-            left: 100px;
+            bottom: 20px;
+            left: 50px;
+            transition: bottom 0.2s ease;
         }
 
         #obstacle {
-            width: 80px;
-            height: 60px;
-            background: green;
+            width: 40px;
+            height: 80px;
+            background: brown;
             position: absolute;
-            bottom: 0;
-            right: -100px;
-            animation: move 2.5s linear infinite;
-        }
-
-        @keyframes move {
-            0% { right: -150px; }
-            100% { right: 100%; }
-        }
-
-        .jump {
-            animation: jump 0.5s linear;
-        }
-
-        @keyframes jump {
-            0% { top: 200px; }
-            50% { top: 120px; }
-            100% { top: 200px; }
+            bottom: 20px;
+            right: -50px;
         }
 
         #score {
+            font-size: 20px;
             position: absolute;
-            top: 20px;
-            left: 20px;
-            font-size: 30px;
-            color: black;
-            font-weight: bold;
+            top: 10px;
+            left: 10px;
+            padding: 5px 10px;
+            background: #ffffffaa;
+            border-radius: 5px;
         }
+
+        #game-over {
+            display: none;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: #0008;
+            top: 0;
+            left: 0;
+            color: white;
+            text-align: center;
+            padding-top: 80px;
+            font-size: 30px;
+        }
+
+        #restart {
+            padding: 10px 20px;
+            margin-top: 10px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
     </style>
 </head>
-
 <body>
+
+<div class="game-box">
     <div id="score">Score: 0</div>
-    <div id="bee"></div>
+
+    <!-- Bee Image -->
+    <img id="bee" src="https://cdn-icons-png.flaticon.com/512/616/616408.png">
+
+    <!-- Obstacle -->
     <div id="obstacle"></div>
+
+    <!-- Game Over Screen -->
+    <div id="game-over">
+        Game Over<br>
+        <button id="restart">Restart</button>
+    </div>
+</div>
 
 <script>
     let bee = document.getElementById("bee");
     let obstacle = document.getElementById("obstacle");
-    let scoreDisplay = document.getElementById("score");
+    let gameOverBox = document.getElementById("game-over");
+    let scoreLabel = document.getElementById("score");
+
     let score = 0;
-    let isAlive = true;
+    let jumping = false;
+    let alive = true;
+
+    // Make the obstacle move
+    function moveObstacle() {
+        obstacle.style.right = "-50px";
+
+        let speed = 3;
+
+        let timer = setInterval(() => {
+            if (!alive) {
+                clearInterval(timer);
+                return;
+            }
+
+            let obstacleRight = parseInt(obstacle.style.right);
+            obstacle.style.right = obstacleRight + speed + "px";
+
+            // Reset obstacle
+            if (obstacleRight > 750) {
+                obstacle.style.right = "-50px";
+                score++;
+                scoreLabel.textContent = "Score: " + score;
+
+                // Increase speed as game progresses
+                speed += 0.2;
+            }
+
+            checkCollision();
+        }, 10);
+    }
 
     // Jump function
-    document.addEventListener("keydown", function() {
-        if (!bee.classList.contains("jump")) {
-            bee.classList.add("jump");
+    function jump() {
+        if (jumping || !alive) return;
 
-            setTimeout(() => {
-                bee.classList.remove("jump");
-            }, 500);
+        jumping = true;
+        let up = 0;
+
+        let jumpInterval = setInterval(() => {
+            if (up >= 120) {  
+                clearInterval(jumpInterval);
+
+                // Fall down
+                let fall = setInterval(() => {
+                    if (up <= 0) {
+                        clearInterval(fall);
+                        jumping = false;
+                    }
+                    up -= 5;
+                    bee.style.bottom = 20 + up + "px";
+                }, 20);
+
+                return;
+            }
+
+            up += 5;
+            bee.style.bottom = 20 + up + "px";
+        }, 20);
+    }
+
+    // Collision detection
+    function checkCollision() {
+        let beeRect = bee.getBoundingClientRect();
+        let obsRect = obstacle.getBoundingClientRect();
+
+        if (
+            beeRect.x < obsRect.x + obsRect.width &&
+            beeRect.x + beeRect.width > obsRect.x &&
+            beeRect.y < obsRect.y + obsRect.height &&
+            beeRect.y + beeRect.height > obsRect.y
+        ) {
+            endGame();
+        }
+    }
+
+    // End game
+    function endGame() {
+        alive = false;
+        gameOverBox.style.display = "block";
+    }
+
+    // Restart game
+    document.getElementById("restart").onclick = () => {
+        location.reload();
+    };
+
+    // Spacebar jump
+    document.addEventListener("keydown", (e) => {
+        if (e.code === "Space") {
+            jump();
         }
     });
 
-    // Game loop (collision + score)
-    setInterval(function () {
-        if (!isAlive) return;
-
-        let beeTop = parseInt(window.getComputedStyle(bee).getPropertyValue("top"));
-        let obstacleLeft = parseInt(window.getComputedStyle(obstacle).getPropertyValue("right"));
-
-        // Collision detection
-        if (700 - obstacleLeft <= 120 && 700 - obstacleLeft >= 60 && beeTop > 160) {
-            isAlive = false;
-            alert("Game Over! Your Score: " + score);
-            window.location.reload();
-        }
-
-        // Increase score
-        if (obstacleLeft >= 298 && obstacleLeft <= 300) {
-            score++;
-            scoreDisplay.innerHTML = "Score: " + score;
-        }
-    }, 50);
+    // Start the movement
+    moveObstacle();
 </script>
 
 </body>
